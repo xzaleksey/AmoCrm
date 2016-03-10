@@ -1,21 +1,25 @@
 package com.valyakinaleksey.amocrm.domain;
 
+import android.text.TextUtils;
+
 import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.ResponseBody;
-import com.valyakinaleksey.amocrm.models.AuthResponse;
-import com.valyakinaleksey.amocrm.models.Response;
+import com.squareup.okhttp.Request;
+import com.valyakinaleksey.amocrm.models.api.AuthResponse;
+import com.valyakinaleksey.amocrm.models.api.LeadsResponse;
+import com.valyakinaleksey.amocrm.models.api.Response;
+import com.valyakinaleksey.amocrm.util.Logger;
+import com.valyakinaleksey.amocrm.util.Session;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 import retrofit.Call;
-import retrofit.Converter;
+import retrofit.GsonConverterFactory;
 import retrofit.Retrofit;
 import retrofit.http.Field;
 import retrofit.http.FormUrlEncoded;
 import retrofit.http.GET;
-import retrofit.http.Header;
 import retrofit.http.POST;
 
 /**
@@ -23,32 +27,43 @@ import retrofit.http.POST;
  * Dhrubok Infotech Services Ltd.
  * ashiq.ayon@gmail.com
  */
-public class RestClient {
+public class ServiceGenerator {
     public static final String USER_LOGIN_P = "USER_LOGIN";
     public static final String USER_PASSWORD_P = "USER_PASSWORD";
     public static final String USER_HASH_P = "USER_HASH";
     public static final String USER_LOGIN = "xzaleksey@gmail.com";
     public static final String USER_HASH = "29dd9a8473c46f508776336045486e7e";
-    private static AmoCrmApiInterface amoCrmApiInterface;
     private static final String BASE_URL = "https://andxzalekseygmailcomibqb.amocrm.ru";
     public static HashMap<String, String> userLoginMap = new HashMap<>();
 
-    public static AmoCrmApiInterface getClient(Converter.Factory factory) {
+    private static Retrofit.Builder builder =
+            new Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create());
+
+    public static <S> S createService(Class<S> serviceClass) {
         OkHttpClient okClient = new OkHttpClient();
         okClient.interceptors().add(new Interceptor() {
             @Override
             public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
+                if (!TextUtils.isEmpty(Session.SESSION_ID)) {
+                    Logger.d(Session.SESSION_ID);
+                    Request original = chain.request();
+                    Request request = original.newBuilder()
+                            .header("Cookie", Session.SESSION_ID)
+                            .method(original.method(), original.body())
+                            .build();
+                    return chain.proceed(request);
+                }
                 return chain.proceed(chain.request());
             }
         });
-        Retrofit.Builder builder = new Retrofit.Builder();
-        builder.baseUrl(BASE_URL)
-                .client(okClient);
-        if (factory != null) {
-            builder.addConverterFactory(factory);
-        }
-        amoCrmApiInterface = builder.build().create(AmoCrmApiInterface.class);
-        return amoCrmApiInterface;
+        Retrofit retrofit = builder.client(okClient).build();
+        return retrofit.create(serviceClass);
+    }
+
+    public static Retrofit retrofit() {
+        return builder.build();
     }
 
     public interface AmoCrmApiInterface {
@@ -60,7 +75,7 @@ public class RestClient {
         Call<Response<AuthResponse>> apiLogin(@Field(USER_LOGIN_P) String login, @Field(USER_PASSWORD_P) String password);
 
         @GET("/private/api/v2/json/leads/list")
-        Call<ResponseBody> getLeads(@Header("session_id") String sessionId);
+        Call<Response<LeadsResponse>> getLeads();
 //        @PUT("/user/{id}/update")
 //        Call<Response> updateUser(@Path("id") String id, @Body Response user);
     }

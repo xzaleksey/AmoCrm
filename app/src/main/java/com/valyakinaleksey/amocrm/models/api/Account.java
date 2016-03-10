@@ -1,4 +1,4 @@
-package com.valyakinaleksey.amocrm.models;
+package com.valyakinaleksey.amocrm.models.api;
 
 import com.google.gson.annotations.SerializedName;
 
