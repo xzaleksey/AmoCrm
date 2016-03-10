@@ -9,4 +9,6 @@ public class Lead {
     public String name;
     @SerializedName("price")
     public int price;
+    @SerializedName("status_id")
+    public int status_id;
 }

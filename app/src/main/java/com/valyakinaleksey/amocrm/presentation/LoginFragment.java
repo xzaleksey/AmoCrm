@@ -55,16 +55,19 @@ public class LoginFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        etLogin.setText("xzaleksey@gmail.com");
-        etPassword.setText("nighthunger00");
+        if (etLogin.getText().toString().isEmpty()) {
+            etLogin.setText("xzaleksey@gmail.com");
+            etPassword.setText("nighthunger00");
+        }
     }
 
     private void initLogin(final View view) {
         final View btnLogin = view.findViewById(R.id.btn_auth);
+        final View progressBar = view.findViewById(R.id.progress_bar);
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                btnLogin.setEnabled(false);
+                displayLoading(true);
                 final View view = getActivity().getCurrentFocus();
                 if (view != null) {
                     InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -88,11 +91,18 @@ public class LoginFragment extends Fragment {
                             ((Navigator) getActivity()).navigateToFragment(new LeadsFragment());
                         } else {
                             APIError apiError = ErrorUtils.parseError(response);
-                            btnLogin.setEnabled(true);
+                            displayLoading(false);
                             if (!TextUtils.isEmpty(apiError.error)) {
                                 ToastUtils.showShortMessage(apiError.error, getContext());
+                                switch (apiError.error_code) {
+                                    //и т д. здесь можно обрабатывать наши ошибки
+                                    case ErrorUtils.ERROR_AUTH_LOGIN_PASSWORD:
+                                        break;
+                                    case ErrorUtils.ERROR_AUTH_CAPTCHA:
+                                        break;
+                                }
                                 Logger.d(apiError.error);
-                                Logger.d(apiError.error_code);
+                                Logger.d(String.valueOf(apiError.error_code));
                             }
                         }
                     }
@@ -101,9 +111,14 @@ public class LoginFragment extends Fragment {
                     public void onFailure(Throwable t) {
                         Logger.d(t.toString());
                         ToastUtils.showShortMessage("Check your internet connection", getContext());
-                        btnLogin.setEnabled(true);
+                        displayLoading(false);
                     }
                 });
+            }
+
+            private void displayLoading(boolean b) {
+                btnLogin.setEnabled(!b);
+                progressBar.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
             }
         });
     }

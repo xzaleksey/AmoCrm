@@ -14,6 +14,19 @@ import retrofit.Response;
 
 public class ErrorUtils {
 
+    public static final int ERROR_AUTH_LOGIN_PASSWORD = 110;
+    public static final int ERROR_AUTH_CAPTCHA = 111;
+    public static final int ERROR_AUTH__USER_NOT_IN_ACCOUNT = 112;
+    public static final int ERROR_AUTH__USER_NOT_IN_WHITE_LIST = 113;
+    public static final int ERROR_AUTH__ACCOUNT_NOT_FOUND = 101;
+    public static final int ERROR_AUTH__NO_ACCOUNT_DATA = 401;
+    public static final int ERROR_LEAD_ADD_LEAD_EMPTY_ARRAY = 213;
+    public static final int ERROR_LEAD_ADD_UPDATE_EMPTY_REQUEST = 214;
+    public static final int ERROR_LEAD_ADD_UPDATE_WRONG_METHOD = 215;
+    public static final int ERROR_LEAD_UPDATE_EMPTY_ARRAY = 216;
+    public static final int ERROR_LEAD_UPDATE_PARAMETERS_MISSED = 217;
+    public static final int ERROR_LEAD_ADD_LEAD_EMPTY = 240;
+
     public static final Type ERROR_TYPE = new TypeToken<com.valyakinaleksey.amocrm.models.api.Response<APIError>>() {
     }.getType();
 

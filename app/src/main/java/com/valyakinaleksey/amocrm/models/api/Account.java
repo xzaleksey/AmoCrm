@@ -2,6 +2,8 @@ package com.valyakinaleksey.amocrm.models.api;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public class Account {
     @SerializedName("id")
     public int id;
@@ -12,5 +14,7 @@ public class Account {
     @SerializedName("language")
     public String language;
     @SerializedName("timezone")
-    public String timzeone;
+    public String timezone;
+    @SerializedName("leads_statuses")
+    public List<LeadStatus> leadStatuses;
 }

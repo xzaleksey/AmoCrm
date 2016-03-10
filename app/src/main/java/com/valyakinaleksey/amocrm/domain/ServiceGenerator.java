@@ -7,12 +7,12 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.valyakinaleksey.amocrm.models.api.AuthResponse;
 import com.valyakinaleksey.amocrm.models.api.LeadsResponse;
+import com.valyakinaleksey.amocrm.models.api.LeadsStatusesResponse;
 import com.valyakinaleksey.amocrm.models.api.Response;
 import com.valyakinaleksey.amocrm.util.Logger;
 import com.valyakinaleksey.amocrm.util.Session;
 
 import java.io.IOException;
-import java.util.HashMap;
 
 import retrofit.Call;
 import retrofit.GsonConverterFactory;
@@ -22,19 +22,10 @@ import retrofit.http.FormUrlEncoded;
 import retrofit.http.GET;
 import retrofit.http.POST;
 
-/**
- * Created by Ashiq Uz Zoha on 9/13/15.
- * Dhrubok Infotech Services Ltd.
- * ashiq.ayon@gmail.com
- */
 public class ServiceGenerator {
     public static final String USER_LOGIN_P = "USER_LOGIN";
     public static final String USER_PASSWORD_P = "USER_PASSWORD";
-    public static final String USER_HASH_P = "USER_HASH";
-    public static final String USER_LOGIN = "xzaleksey@gmail.com";
-    public static final String USER_HASH = "29dd9a8473c46f508776336045486e7e";
     private static final String BASE_URL = "https://andxzalekseygmailcomibqb.amocrm.ru";
-    public static HashMap<String, String> userLoginMap = new HashMap<>();
 
     private static Retrofit.Builder builder =
             new Retrofit.Builder()
@@ -68,14 +59,15 @@ public class ServiceGenerator {
 
     public interface AmoCrmApiInterface {
 
-        //        @GET("/search/users")
-//        Call<GitResult> getUsersNamedTom(@Query("q") String name);
         @FormUrlEncoded
         @POST("/private/api/auth.php?type=json")
         Call<Response<AuthResponse>> apiLogin(@Field(USER_LOGIN_P) String login, @Field(USER_PASSWORD_P) String password);
 
         @GET("/private/api/v2/json/leads/list")
         Call<Response<LeadsResponse>> getLeads();
+
+        @GET("/private/api/v2/json/accounts/current")
+        Call<Response<LeadsStatusesResponse>> getLeadStatuses();
 //        @PUT("/user/{id}/update")
 //        Call<Response> updateUser(@Path("id") String id, @Body Response user);
     }

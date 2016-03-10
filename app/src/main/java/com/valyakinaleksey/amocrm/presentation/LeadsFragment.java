@@ -13,15 +13,19 @@ import android.view.ViewGroup;
 import com.valyakinaleksey.amocrm.R;
 import com.valyakinaleksey.amocrm.domain.LeadsAdapter;
 import com.valyakinaleksey.amocrm.domain.ServiceGenerator;
+import com.valyakinaleksey.amocrm.models.MyLead;
 import com.valyakinaleksey.amocrm.models.api.APIError;
 import com.valyakinaleksey.amocrm.models.api.Lead;
 import com.valyakinaleksey.amocrm.models.api.LeadsResponse;
+import com.valyakinaleksey.amocrm.models.api.LeadsStatusesResponse;
 import com.valyakinaleksey.amocrm.models.api.Response;
 import com.valyakinaleksey.amocrm.util.ErrorUtils;
+import com.valyakinaleksey.amocrm.util.LeadUtils;
 import com.valyakinaleksey.amocrm.util.Logger;
 import com.valyakinaleksey.amocrm.util.Session;
 import com.valyakinaleksey.amocrm.util.ToastUtils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +35,7 @@ import retrofit.Retrofit;
 
 public class LeadsFragment extends Fragment {
     private LeadsAdapter leadsAdapter;
-    private List<Lead> leadList = new ArrayList<>();
+    private List<MyLead> leadList = new ArrayList<>();
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -51,10 +55,14 @@ public class LeadsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Session.clearSession(getContext());
-                ((Navigator) getActivity()).navigateToFragment(new LoginFragment());
+                navigateToAuth();
             }
         });
         return view;
+    }
+
+    private void navigateToAuth() {
+        ((Navigator) getActivity()).navigateToFragment(new LoginFragment());
     }
 
     @Override
@@ -62,32 +70,70 @@ public class LeadsFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         ServiceGenerator.AmoCrmApiInterface service = ServiceGenerator.createService(ServiceGenerator.AmoCrmApiInterface.class);
         if (!TextUtils.isEmpty(Session.SESSION_ID)) {
-            Call<Response<LeadsResponse>> responseCall = service.getLeads();
-            responseCall.enqueue(new Callback<Response<LeadsResponse>>() {
-                @Override
-                public void onResponse(retrofit.Response<Response<LeadsResponse>> response, Retrofit retrofit) {
-                    if (response.isSuccess()) {
-                        List<Lead> leads = response.body().response.leads;
-                        leadList.clear();
-                        leadList.addAll(leads);
-                        leadsAdapter.notifyDataSetChanged();
-                    } else {
-                        APIError apiError = ErrorUtils.parseError(response);
-                        if (!TextUtils.isEmpty(apiError.error)) {
-                            ToastUtils.showShortMessage(apiError.error, getContext());
-                            Logger.d(apiError.error);
-                            Logger.d(apiError.error_code);
+            if (LeadUtils.isLeadStatusesEmpty()) {
+                initLeadsStatuses(service);
+            } else {
+                initLeads(service);
+            }
+        } else {
+            navigateToAuth();
+        }
+    }
+
+    private void initLeads(ServiceGenerator.AmoCrmApiInterface service) {
+        Call<Response<LeadsResponse>> leadsResponse = service.getLeads();
+        leadsResponse.enqueue(new Callback<Response<LeadsResponse>>() {
+            @Override
+            public void onResponse(retrofit.Response<Response<LeadsResponse>> response, Retrofit retrofit) {
+                if (response.isSuccess()) {
+                    List<Lead> leads = response.body().response.leads;
+                    leadList.clear();
+                    leadList.addAll(LeadUtils.convertLeads(leads));
+                    leadsAdapter.notifyDataSetChanged();
+                } else {
+                    APIError apiError = ErrorUtils.parseError(response);
+                    if (!TextUtils.isEmpty(apiError.error)) {
+                        ToastUtils.showShortMessage(apiError.error, getContext());
+                        switch (apiError.error_code) {
+                            //и т д. здесь можно обрабатывать наши ошибки
+                            case ErrorUtils.ERROR_LEAD_UPDATE_EMPTY_ARRAY:
+                                break;
                         }
+                        Logger.d(apiError.error);
+                        Logger.d(String.valueOf(apiError.error_code));
                     }
                 }
+            }
 
-                @Override
-                public void onFailure(Throwable t) {
-                    Logger.d(t.toString());
-                    ToastUtils.showShortMessage("Check your internet connection", getContext());
+            @Override
+            public void onFailure(Throwable t) {
+                Logger.d(t.toString());
+                ToastUtils.showShortMessage("Check your internet connection", getContext());
+            }
+        });
+    }
+
+    private void initLeadsStatuses(final ServiceGenerator.AmoCrmApiInterface service) {
+        Call<Response<LeadsStatusesResponse>> leadsStatusesResponse = service.getLeadStatuses();
+        leadsStatusesResponse.enqueue(new Callback<Response<LeadsStatusesResponse>>() {
+            @Override
+            public void onResponse(retrofit.Response<Response<LeadsStatusesResponse>> response, Retrofit retrofit) {
+                if (response.isSuccess()) {
+                    LeadUtils.setLeadStatuses(response.body().response.account.leadStatuses);
+                    initLeads(service);
+                } else {
+                    try {
+                        Logger.d(response.errorBody().string());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-            });
+            }
 
-        }
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
     }
 }

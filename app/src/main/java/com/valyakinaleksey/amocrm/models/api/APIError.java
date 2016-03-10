@@ -6,5 +6,5 @@ public class APIError {
     @SerializedName("error")
     public String error;
     @SerializedName("error_code")
-    public String error_code;
+    public int error_code;
 }
